@@ -881,6 +881,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &93439490 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6223405842507106385, guid: e395a30a7d2fafb4abaaec60b0965e0c, type: 3}
+  m_PrefabInstance: {fileID: 1192316306}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &104221815
 GameObject:
   m_ObjectHideFlags: 0
@@ -12313,7 +12318,10 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6325447196720837522, guid: e395a30a7d2fafb4abaaec60b0965e0c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 330585546}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6223405842507106385, guid: e395a30a7d2fafb4abaaec60b0965e0c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1769880851}
   m_SourcePrefab: {fileID: 100100000, guid: e395a30a7d2fafb4abaaec60b0965e0c, type: 3}
 --- !u!1001 &1218181014
 PrefabInstance:
@@ -18286,6 +18294,21 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6325447196720837522, guid: e395a30a7d2fafb4abaaec60b0965e0c, type: 3}
   m_PrefabInstance: {fileID: 1192316306}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1769880851
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 93439490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1a8ce6f6602e8449b75cfff66b3f012, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerFlashlight
+  range: 24
+  spotAngle: 65
+  intensity: 10
 --- !u!1001 &1777000797
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -21881,6 +21904,8 @@ MonoBehaviour:
   navMeshLayers:
     serializedVersion: 2
     m_Bits: 136
+  navMeshCenter: {x: 0, y: 3.5, z: 0}
+  navMeshSize: {x: 27.6, y: 9, z: 27.6}
 --- !u!114 &3000000004
 MonoBehaviour:
   m_ObjectHideFlags: 0
