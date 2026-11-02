@@ -55,6 +55,10 @@ public class PlayerCameraController : MonoBehaviour
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             SetCursorLocked(false);
 
+        // While paused or on the result screen the cursor must stay free for the buttons.
+        if (Time.timeScale == 0f)
+            return;
+
         if (Mouse.current == null || cameraTransform == null)
             return;
 
@@ -89,11 +93,15 @@ public class PlayerCameraController : MonoBehaviour
         Quaternion yawRotation = Quaternion.Euler(0f, cameraYaw, 0f);
         Vector3 desiredPosition = playerTransform.position + yawRotation * cameraOffset;
 
-        cameraTransform.position = Vector3.SmoothDamp(
-            cameraTransform.position,
-            desiredPosition,
-            ref cameraFollowVelocity,
-            cameraSmoothTime);
+        // A zero smooth time means first person: the camera sticks to the eyes with no lag.
+        if (cameraSmoothTime <= 0f)
+            cameraTransform.position = desiredPosition;
+        else
+            cameraTransform.position = Vector3.SmoothDamp(
+                cameraTransform.position,
+                desiredPosition,
+                ref cameraFollowVelocity,
+                cameraSmoothTime);
         cameraTransform.rotation = Quaternion.Euler(cameraPitch, cameraYaw, 0f);
     }
 

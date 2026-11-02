@@ -16,6 +16,8 @@ public class PlayerMovement : MonoBehaviour
     public bool lockCursorOnStart = true;
 
     [Header("Camera Follow")]
+    public bool firstPerson = true;
+    public float eyeHeight = 1.6f;
     public Vector3 cameraOffset = new Vector3(0f, 2f, -5f);
     public float cameraSmoothTime = 0.15f;
 
@@ -41,10 +43,24 @@ public class PlayerMovement : MonoBehaviour
     public float Exposure { get; private set; }
     public bool IsFullyExposed => Exposure >= exposureToChase;
 
+    [Header("Panic")]
+    [Tooltip("Seconds of hiding before panic starts to build.")]
+    public float panicGraceSeconds = 4f;
+    [Tooltip("Seconds for the panic meter to fill once it starts building.")]
+    public float panicFillSeconds = 8f;
+    [Tooltip("Seconds for a full panic meter to drain while not hiding.")]
+    public float panicRecoverySeconds = 5f;
+    [Range(0f, 1f)] public float panicAfterAlert = 0.4f;
+    public float Panic { get; private set; }
+    public event System.Action<Vector3> PanicAlert;
+    public event System.Action<bool> HideChanged;
+
     [Header("Hiding")]
     public float hideInteractionDistance = 2f;
     public bool hideRenderersWhenHidden = true;
     public bool IsHidden { get; private set; }
+    public bool CanHide => !IsHidden && characterController != null && FindNearestHideSpot() != null;
+    public bool FlashlightOn => flashlight != null && flashlight.IsOn && !IsHidden;
 
     CharacterController characterController;
     Collider childCollider;
@@ -52,7 +68,9 @@ public class PlayerMovement : MonoBehaviour
     PlayerCameraController cameraController;
     PlayerGrounding grounding;
     HideSpot currentHideSpot;
+    PlayerFlashlight flashlight;
     float verticalVelocity;
+    float hiddenTime;
 
     void Start()
     {
@@ -74,6 +92,9 @@ public class PlayerMovement : MonoBehaviour
         cameraController = GetOrAddComponent<PlayerCameraController>();
         grounding = GetOrAddComponent<PlayerGrounding>();
 
+        if (firstPerson)
+            SetupFirstPerson();
+
         cameraController.Initialize(
             transform,
             cameraTransform,
@@ -81,8 +102,8 @@ public class PlayerMovement : MonoBehaviour
             minLookAngle,
             maxLookAngle,
             lockCursorOnStart,
-            cameraOffset,
-            cameraSmoothTime,
+            firstPerson ? new Vector3(0f, eyeHeight, 0f) : cameraOffset,
+            firstPerson ? 0f : cameraSmoothTime,
             rotationSpeed);
         grounding.Initialize(
             transform,
@@ -90,6 +111,22 @@ public class PlayerMovement : MonoBehaviour
             groundLayers,
             groundCheckDistance,
             maxGroundAngle);
+    }
+
+    void SetupFirstPerson()
+    {
+        // Keep the body casting shadows but never draw it from inside.
+        foreach (Renderer r in renderers)
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
+
+        if (cameraTransform != null && cameraTransform.TryGetComponent(out Camera playerCamera))
+            playerCamera.nearClipPlane = 0.05f;
+
+        if (cameraTransform != null)
+        {
+            flashlight = GetOrAddComponent<PlayerFlashlight>();
+            flashlight.Initialize(cameraTransform, this);
+        }
     }
 
     void Update()
@@ -100,6 +137,7 @@ public class PlayerMovement : MonoBehaviour
         cameraController.RotatePlayer();
 
         HandleHideInteraction();
+        UpdatePanic();
         if (IsHidden)
             return;
 
@@ -148,9 +186,41 @@ public class PlayerMovement : MonoBehaviour
         Exposure = Mathf.Min(exposureToChase, Exposure + Mathf.Max(0f, amount));
     }
 
+    public void DecreaseExposure(float amount)
+    {
+        Exposure = Mathf.Max(0f, Exposure - Mathf.Max(0f, amount));
+    }
+
+    public void ResetExposure()
+    {
+        Exposure = 0f;
+    }
+
+    // Staying hidden too long builds panic; when it peaks the player gives away the hiding spot.
+    void UpdatePanic()
+    {
+        if (!IsHidden)
+        {
+            hiddenTime = 0f;
+            Panic = Mathf.Max(0f, Panic - Time.deltaTime / Mathf.Max(0.01f, panicRecoverySeconds));
+            return;
+        }
+
+        hiddenTime += Time.deltaTime;
+        if (hiddenTime <= panicGraceSeconds)
+            return;
+
+        Panic = Mathf.Min(1f, Panic + Time.deltaTime / Mathf.Max(0.01f, panicFillSeconds));
+        if (Panic < 1f)
+            return;
+
+        PanicAlert?.Invoke(transform.position);
+        Panic = panicAfterAlert;
+    }
+
     void HandleHideInteraction()
     {
-        if (Keyboard.current == null || !Keyboard.current.eKey.wasPressedThisFrame)
+        if (Keyboard.current == null || Time.timeScale == 0f || !Keyboard.current.eKey.wasPressedThisFrame)
             return;
 
         if (IsHidden)
@@ -170,6 +240,7 @@ public class PlayerMovement : MonoBehaviour
         transform.position = currentHideSpot.GetHidePosition();
         SetHiddenVisualState(true);
         IsHidden = true;
+        HideChanged?.Invoke(true);
     }
 
     void ExitHideSpot()
@@ -185,6 +256,7 @@ public class PlayerMovement : MonoBehaviour
         characterController.enabled = true;
         IsHidden = false;
         currentHideSpot = null;
+        HideChanged?.Invoke(false);
     }
 
     void SetHiddenVisualState(bool hidden)

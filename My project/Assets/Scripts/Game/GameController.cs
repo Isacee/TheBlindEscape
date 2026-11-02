@@ -28,7 +28,9 @@ public class GameController : MonoBehaviour
             surface = gameObject.AddComponent<NavMeshSurface>();
 
         surface.collectObjects = CollectObjects.All;
-        surface.layerMask = navMeshLayers;
+        // A serialized mask of 0 collects nothing and leaves the enemy without a navmesh.
+        int walkableMask = navMeshLayers.value != 0 ? navMeshLayers.value : (1 << 3) | (1 << 7);
+        surface.layerMask = walkableMask;
         surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
         surface.BuildNavMesh();
     }
@@ -93,6 +95,9 @@ public class GameController : MonoBehaviour
 
     public void QuitGame()
     {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
         Application.Quit();
     }
 }
