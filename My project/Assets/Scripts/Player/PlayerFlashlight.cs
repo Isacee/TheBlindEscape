@@ -4,9 +4,9 @@ using UnityEngine.InputSystem;
 // Hand-held flashlight: the only reliable light in the dark house. Toggle with F.
 public class PlayerFlashlight : MonoBehaviour
 {
-    public float range = 16f;
-    public float spotAngle = 55f;
-    public float intensity = 3f;
+    public float range = 24f;
+    public float spotAngle = 65f;
+    public float intensity = 10f;
 
     public bool IsOn { get; private set; } = true;
 

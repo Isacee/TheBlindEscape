@@ -189,7 +189,7 @@ public class GameUI : MonoBehaviour
     // Without an EventSystem no button ever receives a click.
     static void EnsureEventSystem()
     {
-        if (FindFirstObjectByType<EventSystem>() != null)
+        if (FindAnyObjectByType<EventSystem>() != null)
             return;
 
         var eventSystem = new GameObject("EventSystem");
